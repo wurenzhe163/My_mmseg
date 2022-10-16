@@ -6,6 +6,7 @@ import time
 import warnings
 import torch
 import torch.distributed as dist
+from mmmseg.datasets import build_dataset
 from mmmcv.utils import DictAction,Config
 from mmmcv.runner import init_dist,get_dist_info
 from mmmseg.apis import init_random_seed, set_random_seed
@@ -193,6 +194,23 @@ def main():
         test_cfg=cfg.get('test_cfg'))
     model.init_weights()
 
+    # cfg.model 里包含很多type，每一个字符串type都会通过一定的操作(注册器registry)转换成类
+    model = build_segmentor(
+        cfg.model,
+        train_cfg=cfg.get('train_cfg'),
+        test_cfg=cfg.get('test_cfg'))
+    model.init_weights()
+    # SyncBN is not support for DP
+    # if not distributed:
+    #     warnings.warn(
+    #         'SyncBN is only supported with DDP. To be compatible with DP, '
+    #         'we convert SyncBN to BN. Please use dist_train.sh which can '
+    #         'avoid this error.')
+    #     model = revert_sync_batchnorm(model)
+    #
+    # logger.info(model)
+
+    datasets = [build_dataset(cfg.data.train)]
     print('over')
 
 if __name__=='__main__':
