@@ -6,9 +6,10 @@ import time
 import warnings
 import torch
 import torch.distributed as dist
-from mmmseg.apis import init_random_seed, set_random_seed
 from mmmcv.utils import DictAction,Config
 from mmmcv.runner import init_dist,get_dist_info
+from mmmseg.apis import init_random_seed, set_random_seed
+from mmmseg.models import build_segmentor
 from mmmseg.utils import (get_root_logger,setup_multi_processes,
                           get_device,collect_env)
 import mmmcv
@@ -185,6 +186,12 @@ def main():
     meta['seed'] = seed
     meta['exp_name'] = osp.basename(args.config)
 
+    # cfg.model 里包含很多type，每一个字符串type都会通过一定的操作(注册器registry)转换成类
+    model = build_segmentor(
+        cfg.model,
+        train_cfg=cfg.get('train_cfg'),
+        test_cfg=cfg.get('test_cfg'))
+    model.init_weights()
 
     print('over')
 
